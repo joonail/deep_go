@@ -2,6 +2,7 @@ package main
 
 import (
 	"reflect"
+	"sync/atomic"
 	"testing"
 	"unsafe"
 
@@ -10,28 +11,53 @@ import (
 
 type COWBuffer struct {
 	data []byte
-	refs *int
-	// need to implement
+	refs *int32
+}
+
+func NewCOWBufferShared(data []byte, refs *int32) COWBuffer {
+	return COWBuffer{
+		data: data,
+		refs: refs,
+	}
 }
 
 func NewCOWBuffer(data []byte) COWBuffer {
-	return COWBuffer{} // need to implement
+	cnt := int32(1)
+	return NewCOWBufferShared(data, &cnt)
 }
 
 func (b *COWBuffer) Clone() COWBuffer {
-	return COWBuffer{} // need to implement
+	atomic.AddInt32(b.refs, 1)
+	return NewCOWBufferShared(b.data, b.refs)
 }
 
 func (b *COWBuffer) Close() {
-	// need to implement
+	if b.refs == nil {
+		return
+	}
+	if atomic.AddInt32(b.refs, -1) == 0 {
+		// При обнулении счётчика память будет освобождена сборщиком мусора
+	}
 }
 
 func (b *COWBuffer) Update(index int, value byte) bool {
-	return false // need to implement
+	if index < 0 || index >= len(b.data) {
+		return false
+	}
+	if atomic.LoadInt32(b.refs) > 1 {
+		newData := make([]byte, len(b.data))
+		copy(newData, b.data)
+		atomic.AddInt32(b.refs, -1)
+		cnt := int32(1)
+		b.refs = &cnt
+		b.data = newData
+	}
+	b.data[index] = value
+	return true
 }
 
 func (b *COWBuffer) String() string {
-	return "" // need to implement
+	return *(*string)(unsafe.Pointer(&b.data))
 }
 
 func TestCOWBuffer(t *testing.T) {
