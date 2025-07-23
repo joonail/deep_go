@@ -14,23 +14,27 @@ type COWBuffer struct {
 	refs *int32
 }
 
-func NewCOWBuffer(data []byte) COWBuffer {
-	cnt := int32(1)
+func NewCOWBufferShared(data []byte, refs *int32) COWBuffer {
 	return COWBuffer{
 		data: data,
-		refs: &cnt,
+		refs: refs,
 	}
+}
+
+func NewCOWBuffer(data []byte) COWBuffer {
+	cnt := int32(1)
+	return NewCOWBufferShared(data, &cnt)
 }
 
 func (b *COWBuffer) Clone() COWBuffer {
 	atomic.AddInt32(b.refs, 1)
-	return COWBuffer{
-		data: b.data,
-		refs: b.refs,
-	}
+	return NewCOWBufferShared(b.data, b.refs)
 }
 
 func (b *COWBuffer) Close() {
+	if b.refs == nil {
+		return
+	}
 	if atomic.AddInt32(b.refs, -1) == 0 {
 		// При обнулении счётчика память будет освобождена сборщиком мусора
 	}
