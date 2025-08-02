@@ -15,9 +15,11 @@ func notify(status string) {
 
 func process() {
 	var status string
-	defer func(s string) {
+	defer func(s string) { // s здесь копия status.
 		notify(s)
-	}(status)
+	}(status) // откладывается с заранее вычисленным аргументом, который в данном случае это пустая строка "".
+
+	// TODO вернуться к лекции 5.2_04:40
 
 	// processing..
 	status = StatusError

@@ -5,7 +5,7 @@ import "fmt"
 func main() {
 	// remove all elements
 	first := map[int]int{1: 1, 2: 2, 3: 3}
-	first = nil
+	first = nil // Память будет освобождена сборщиком мусора
 	fmt.Println(first, " : ", len(first))
 
 	// keep allocated memory

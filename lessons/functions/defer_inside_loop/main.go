@@ -10,7 +10,7 @@ func readFiles(paths []string) error {
 		}
 
 		// reading file...
-		defer file.Close()
+		defer file.Close() // defer будет вызван к конце функции readFiles, а не внутри области видимости (цикла.
 	}
 
 	return nil
